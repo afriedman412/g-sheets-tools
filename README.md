@@ -24,7 +24,7 @@ To install with pip, run
 You can also clone this repository and run `python setup.py install`.
 
 # Basic Usage
-**Make a GST object:**  
+**Make a gSheet object:**  
 Duplicate names are OK, Sheets automatically assigns unique ID's.
 
 ```
@@ -39,7 +39,7 @@ g = gSheet()
 ```
 
 
-**Download data with a GST object:**  
+**Download data with a gSheet object:**  
 Data ranges are formatted "Sheet Name!first cell:last cell". 
 
 ```
@@ -47,8 +47,8 @@ Data ranges are formatted "Sheet Name!first cell:last cell".
 data = g.loadDataFromSheet('cities!A:Z')
 ```
 
-**Upload data with a GST object:**  
-This overwrites data by default. pass `write_setting='append'` to preserve existing data.
+**Upload data with a gSheet object:**  
+This overwrites data by default. Pass `write_setting='append'` to preserve existing data.
 
 ```
 # pass a dataframe and a destination
