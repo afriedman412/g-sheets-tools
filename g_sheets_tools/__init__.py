@@ -291,13 +291,13 @@ def quickSheet(data, spreadsheet_name, sheet_names='Sheet1'):
 
     return g.sheet_id
 
-def quickLoad(id_, data_range="Sheet1!A:Z"):
-    g = gSheet(id_)
+def quickLoad(sheet_id, data_range="Sheet1!A:Z"):
+    g = gSheet(sheet_id)
     df = g.loadDataFromSheet(data_range)
     return df
 
 
-def quickWrite(data, id_, data_range="Sheet1!A:Z"):
-    g = gSheet(id_)
+def quickWrite(data, sheet_id, data_range="Sheet1!A:Z"):
+    g = gSheet(sheet_id)
     df = g.writeDataToSheet(data.fillna(''), data_range)
     return
