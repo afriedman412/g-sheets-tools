@@ -1,15 +1,15 @@
 # Google Sheets Tools
 
-`Google Sheets Tools` is a wrapper for the Google Sheets API that streamlines the process of moving data in and out of Sheets, especially for Pandas users. (I built this because I got tired of exporting and uploading .csv files.)
+`G Sheets Tools` is a wrapper for the Google Sheets API that streamlines the process of moving data in and out of Sheets, especially for Pandas users. (I built this because I got tired of exporting and uploading .csv files.)
 
 # Before you install...
-To run `GST`, you need your own App under your own Google account. This is easy!
+This package allows you to interface with your Google Sheets docs, but you still need to make a dummy Google App that runs the Sheets API to use it. It's easy! Here's how.
 
 1. Go to the [Google Developers Console](https://console.developers.google.com/cloud-resource-manager). Create a new app.
 2. Go to the [Google API Library](https://console.developers.google.com/apis/library) and find the Google Sheets API.
 3. Click "Enable"
 4. Go to the [Credentials](https://console.developers.google.com/apis/credentials) page, either through the provided link or the in the console sidebar.
-5.  If Google requires you to set up the OAuth Consent Screen, select "external" and then name your app whatever you would like. (This is the only thing you need to do on the OAuth Consent Screen menu!)
+5.  Follow the prompt to open the OAuth Consent Screen and name your app. _(This is the only thing you need to do on this page!)_
 6. Click "+ Create Credentials" at the top of the screen and select "OAuth client ID".
 7. Select "Desktop app" from the "Application type" menu and put whatever you like in "Name".
 8. You should now see your OAuth Client ID on the Credentials page.
@@ -70,14 +70,17 @@ g.deleteSheet('sheet to delete')
 ```
 
 # Standalone Functions
-**quickSheet**  
-Create a new spreadsheet from one or many data sources.
-```
+There are standalone functions that allow you to quickly load and write data to a sheet without creating a `gSheet` object
 
 ```
+# create a new spreadsheet and write data to it
+# this is flexible -- try passing it a dictionary of sheet name/data pairs!
+quickSheet(data, new_spreadsheet_name, new_sheet_name)
 
+# load data from a sheet
+data = quickLoad(sheet_id, data_range)
 
-
-
-# Example
+# write data to a sheet
+quickWrite(data, sheet_id, data_range)
+```
 
