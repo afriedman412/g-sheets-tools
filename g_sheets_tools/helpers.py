@@ -1,5 +1,5 @@
 import os
-from pathlib import Path
+# from pathlib import Path
 import json
 from shutil import copyfile
 import pickle
@@ -20,8 +20,8 @@ def gAuth():
     else:
         base_path = os.path.expanduser('~/') + '.config/gst/'
     
-    path = Path(base_path)
-    os.makedirs(path, exist_ok=True)
+    # path = Path(base_path)
+    os.makedirs(base_path, exist_ok=True)
 
     token_path = base_path + 'token.pickle'
     creds_path = base_path + 'credentials.json'
