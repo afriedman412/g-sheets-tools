@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="g-sheets-tools",
-    version="0.0.8",
+    version="0.0.9",
     author="Andy Friedman",
     author_email="afriedman412@gmail.com",
     description="Easy wrapper for the Google Sheets API",
@@ -24,7 +24,7 @@ setuptools.setup(
         'googleapis-common-protos==1.52.0',
         'httplib2==0.18.1',
         'idna==2.10',
-        'numpy<1.19.0',
+        'numpy>1.18.0',
         'oauthlib==3.1.0',
         'pandas==0.24',
         'protobuf==3.13.0',
@@ -45,5 +45,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.5',
+    python_requires='>=3.6',
 )
