@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="g-sheets-tools",
-    version="0.0.9",
+    version="0.1",
     author="Andy Friedman",
     author_email="afriedman412@gmail.com",
     description="Easy wrapper for the Google Sheets API",
@@ -26,7 +26,7 @@ setuptools.setup(
         'idna==2.10',
         'numpy>1.18.0',
         'oauthlib==3.1.0',
-        'pandas==0.24',
+        'pandas>=0.24',
         'protobuf==3.13.0',
         'pyasn1==0.4.8',
         'pyasn1-modules==0.2.8',
