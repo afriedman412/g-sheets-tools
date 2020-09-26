@@ -4,8 +4,7 @@ import pandas as pd
 from googleapiclient.discovery import build
 import json
 from pathlib import Path
-from .helpers import *
-
+from helpers import *
 
 
 # MAJOR CODE
@@ -213,6 +212,12 @@ class gSheet:
             "values": data_out_for_upload
             }
 
+        # if the sheet name doesn't exist, make it
+        sheet_name = data_range.split('!')[0]
+        self.loadSheetInfo()
+        if sheet_name not in self.sheet_info.keys():
+            self.createNewSheet(sheet_name)
+
         if write_setting == 'update':
             request = self.sheet_object.values().update(
                 spreadsheetId=self.sheet_id, 
@@ -290,6 +295,7 @@ def quickSheet(data, spreadsheet_name, sheet_names='Sheet1'):
         g.writeDataToSheet(data_dict[d].fillna(''), '{}!A:Z'.format(d))
 
     return g.sheet_id
+    
 
 def quickLoad(sheet_id, data_range="Sheet1!A:Z"):
     g = gSheet(sheet_id)
@@ -299,5 +305,11 @@ def quickLoad(sheet_id, data_range="Sheet1!A:Z"):
 
 def quickWrite(data, sheet_id, data_range="Sheet1!A:Z"):
     g = gSheet(sheet_id)
+    g.loadSheetInfo()
+    
+    sheet_name = data_range.split('!')[0]
+    if sheet_name not in g.sheet_info.keys():
+        g.createNewSheet(sheet_name)
+
     df = g.writeDataToSheet(data.fillna(''), data_range)
     return
