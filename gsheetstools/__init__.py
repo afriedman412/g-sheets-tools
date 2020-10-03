@@ -9,8 +9,8 @@ from .helpers import *
 
 # MAJOR CODE
 class gSheet:
-    def __init__(self, sheet_id=None, name=None):
-        self.sheet_object = self.loadSheetObject()
+    def __init__(self, sheet_id=None, name=None, creds_file=None):
+        self.sheet_object = self.loadSheetObject(creds_file)
     
         if name is not None:
             print('starting with new sheet...')
@@ -27,7 +27,7 @@ class gSheet:
     def __repr__(self):
         return self.sheet_id
 
-    def loadSheetObject(self):
+    def loadSheetObject(self, creds_file):
         """
         Creates a "sheet" object. 
         Doesn't actually load a sheet, just creates the connection with Google Sheets.
@@ -36,8 +36,8 @@ class gSheet:
         Auth flow interpolated from here:
         https://developers.google.com/sheets/api/quickstart/python
         """
-        creds = gAuth()
-        service = build('sheets', 'v4', credentials=creds)
+        creds_loaded = gAuth(creds_file)
+        service = build('sheets', 'v4', credentials=creds_loaded)
         self.sheet_object = service.spreadsheets()
 
         return self.sheet_object
