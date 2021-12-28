@@ -1,22 +1,21 @@
-import pickle
-import os
 import pandas as pd
 from googleapiclient.discovery import build
-import json
-from pathlib import Path
 from .helpers import *
 
 
 # MAJOR CODE
 class gSheet:
-    def __init__(self, sheet_id=None, name=None, creds_file=None):
-        self.sheet_object = self.loadSheetObject(creds_file)
+    def __init__(self, sheet_id=None, name=None, suffix=None):
+        print('loading sheet object...')
+        self.suffix = suffix
+        self.sheet_object = self.loadSheetObject()
     
         if name is not None:
             print('starting with new sheet...')
             self.createNewSpreadsheet(str(name))
 
         elif sheet_id is not None:
+            print('loading sheet...')
             self.sheet_id = sheet_id
             self.action = self.sheet_object.get(spreadsheetId=self.sheet_id)
 
@@ -27,7 +26,7 @@ class gSheet:
     def __repr__(self):
         return self.sheet_id
 
-    def loadSheetObject(self, creds_file):
+    def loadSheetObject(self):
         """
         Creates a "sheet" object. 
         Doesn't actually load a sheet, just creates the connection with Google Sheets.
@@ -36,7 +35,7 @@ class gSheet:
         Auth flow interpolated from here:
         https://developers.google.com/sheets/api/quickstart/python
         """
-        creds_loaded = gAuth(creds_file)
+        creds_loaded = gAuth(self.suffix)
         service = build('sheets', 'v4', credentials=creds_loaded)
         self.sheet_object = service.spreadsheets()
 
@@ -250,7 +249,7 @@ class gSheet:
 
         self.sheet_object.batchUpdate(spreadsheetId=self.sheet_id, body=request_body).execute()
 
-def quickSheet(data, spreadsheet_name, sheet_names='Sheet1'):
+def quickSheet(data, spreadsheet_name, page_names='Sheet1'):
     """
     Creates a new spreadsheet called "spreadsheet_name" and writes "data" to it.
 
@@ -284,7 +283,7 @@ def quickSheet(data, spreadsheet_name, sheet_names='Sheet1'):
         data_dict = {}
         for n in range(len(data)):
             try:
-                data_dict[sheet_names[n]] = data[n]
+                data_dict[page_names[n]] = data[n]
             except KeyError:
                 data_dict['Sheet{}'.format(n+1)] = data[n]
 

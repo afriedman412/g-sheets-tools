@@ -1,5 +1,4 @@
 import os
-# from pathlib import Path
 import json
 from shutil import copyfile
 import pickle
@@ -7,16 +6,35 @@ import numpy as np
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
-from googleapiclient.errors import HttpError
+
+# move to config
+DEFAULT_SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+DEFAULT_CREDENTIALS_FILENAME = 'credentials.json'
+DEFAULT_AUTHORIZED_USER_FILENAME = 'authorized_user.json'
+DEFAULT_SERVICE_ACCOUNT_FILENAME = 'service_account.json'
 
 # HELPER FUNCTIONS
 def httpErrorParser(e):
     e_dict = json.loads(e.content.decode("utf-8"))
     return e_dict['error']['message']
+   
 
-def gAuth(creds_file=None):
-    if creds_file is None:
+def gAuth(suffix=None):
+
+    if not suffix:
         creds_file = 'credentials.json'
+        token_file = 'token.pickle'
+
+    else:
+        creds_file = f"credentials_{suffix}.json"
+        token_file = f'token_{suffix}.pickle'
+
+    if 'HEROKU_TEST' in os.environ:
+        creds_path = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+        creds = service_account.Credentials.from_service_account_file(
+            creds_path, scopes=DEFAULT_SCOPES)
+
+        return creds
 
     if os.name == 'nt':
         base_path = os.environ["APPDATA"] + 'gst/'
@@ -24,21 +42,21 @@ def gAuth(creds_file=None):
     else:
         base_path = os.path.expanduser('~/') + '.config/gst/'
     
-    # path = Path(base_path)
+
     os.makedirs(base_path, exist_ok=True)
 
-    token_path = base_path + 'token.pickle'
+    token_path = base_path + token_file
     creds_path = base_path + creds_file
-    SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
     try:
+        print('trying service account creds...')
         creds = service_account.Credentials.from_service_account_file(
-            creds_path, scopes=SCOPES)
+            creds_path, scopes=DEFAULT_SCOPES)
         return creds
 
     except:
-
         if not os.path.exists(creds_path):
+            print('locating credentials...')
             if [f for f in os.listdir(os.path.expanduser('~/')) if 'apps.googleusercontent.com' in f]:
                 try:
                     cred_file = [
@@ -49,7 +67,7 @@ def gAuth(creds_file=None):
                 except FileNotFoundError:
                     print('credentials not found in home dir')
                     return
-                     
+                 
 
         creds = None
         if os.path.exists(token_path):
@@ -61,10 +79,12 @@ def gAuth(creds_file=None):
         if not creds or not creds.valid:
             print('getting new credentials...')
             if creds and creds.expired and creds.refresh_token:
+                print('refreshing token...')
                 creds.refresh(Request())
             else:
+                print('executing flow...')
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    creds_path, SCOPES) # replaced 'credentials.json'
+                    creds_path, DEFAULT_SCOPES) # replaced 'credentials.json'
                 creds = flow.run_local_server(port=0)
 
             # Save the credentials for the next run
