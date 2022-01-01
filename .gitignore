@@ -6,3 +6,4 @@ dist/
 *.egg-info/
 setup.py
 .ipynb_checkpoints/
+tests/__pycache__/*
