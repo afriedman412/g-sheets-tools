@@ -9,3 +9,4 @@ setup.py
 tests/__pycache__/*
 *.sh
 *.token
+venv/
