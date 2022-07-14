@@ -10,8 +10,6 @@ from google.auth.transport.requests import Request
 # move to config
 DEFAULT_SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 DEFAULT_CREDENTIALS_FILENAME = 'credentials.json'
-DEFAULT_AUTHORIZED_USER_FILENAME = 'authorized_user.json'
-DEFAULT_SERVICE_ACCOUNT_FILENAME = 'service_account.json'
 
 # HELPER FUNCTIONS
 def httpErrorParser(e):
@@ -38,10 +36,8 @@ def gAuth(suffix=None):
 
     if os.name == 'nt':
         base_path = os.environ["APPDATA"] + 'gst/'
-
     else:
         base_path = os.path.expanduser('~/') + '.config/gst/'
-    
 
     os.makedirs(base_path, exist_ok=True)
 
