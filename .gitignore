@@ -7,3 +7,5 @@ dist/
 setup.py
 .ipynb_checkpoints/
 tests/__pycache__/*
+*.sh
+*.token

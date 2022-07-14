@@ -1,32 +1,44 @@
 import pandas as pd
 from googleapiclient.discovery import build
+from typing import Union
 from .helpers import *
-
 
 # MAJOR CODE
 class gSheet:
-    def __init__(self, sheet_id=None, name=None, suffix=None):
-        print('loading sheet object...')
+    def __init__(
+        self, 
+        sheet_id: str=None, 
+        name: str=None, 
+        suffix: str=None
+        ):
         self.suffix = suffix
-        self.sheet_object = self.loadSheetObject()
+        self.load_sheet_object()
     
         if name is not None:
             print('starting with new sheet...')
-            self.createNewSpreadsheet(str(name))
+            self.create_new_spreadsheet(str(name))
 
         elif sheet_id is not None:
+            if "docs.google.com" in sheet_id:
+                # handles sheet urls
+                sheet_id = sheet_id.split("d/")[1].split("/")[0]
             print('loading sheet...')
             self.sheet_id = sheet_id
-            self.action = self.sheet_object.get(spreadsheetId=self.sheet_id)
-
+            
         else:
-            print('starting with new sheet...')
-            self.createNewSpreadsheet('Untitled Sheet')
+            raise ValueError("no name or sheet_id provided!")
+
+        self.load_sheet()
 
     def __repr__(self):
         return self.sheet_id
 
-    def loadSheetObject(self):
+    def load_sheet(self):
+        self.load_sheet_object()
+        self.action = self.sheet_object.get(spreadsheetId=self.sheet_id)
+        self.load_page_info()
+
+    def load_sheet_object(self):
         """
         Creates a "sheet" object. 
         Doesn't actually load a sheet, just creates the connection with Google Sheets.
@@ -41,7 +53,7 @@ class gSheet:
 
         return self.sheet_object
 
-    def createNewSpreadsheet(self, title):
+    def create_new_spreadsheet(self, title):
         """
         Create a new spreadsheet file with provided title.
         Sets self.sheet_id to new sheet id.
@@ -56,14 +68,13 @@ class gSheet:
             fields='spreadsheetId'
             ).execute()
 
-        sheet_id = spreadsheet.get('spreadsheetId')
+        self.sheet_id = spreadsheet.get('spreadsheetId')
 
-        print('Spreadsheet ID: {0}'.format(sheet_id))
+        print(f'Spreadsheet ID: {self.sheet_id}')
+        return
+        
 
-        self.sheet_id = sheet_id
-        self.action = self.sheet_object.get(spreadsheetId=self.sheet_id)
-
-    def loadDataFromSheet(self, data_range, return_df=True, assume_headers=True):
+    def load_from_range(self, data_range, return_df=True, assume_headers=True):
         """
         Pulls the provided data range from the sheet_id using provided sheet_object.
 
@@ -71,9 +82,7 @@ class gSheet:
         """
         try:
             result = self.sheet_object.values().get(spreadsheetId=self.sheet_id, range=data_range).execute()
-
             values = result.get('values', [])
-
             if return_df:
                 if assume_headers:
                     return pd.DataFrame(values[1:], columns=values[0])
@@ -86,16 +95,16 @@ class gSheet:
             print(httpErrorParser(e))
             return None 
 
-    def createNewSheet(self, sheet_name):
+    def create_new_page(self, page_name):
         """
-        Creates a new blank sheet named 'sheet_name' in the sheet 'sheet_id'.
+        Creates a new blank page named 'page_name' in the loaded sheet.
         """
 
         request_body = {
             'requests': [
                     {
                     'addSheet': 
-                        {'properties': {'title': sheet_name}
+                        {'properties': {'title': page_name}
                         }
                     }
                 ]
@@ -106,7 +115,7 @@ class gSheet:
                 spreadsheetId=self.sheet_id,
                 body=request_body
                 ).execute()
-
+            self.load_page_info()
             return response
 
         # escape code for duplicate name error
@@ -114,38 +123,47 @@ class gSheet:
             print(httpErrorParser(e))
             return None
 
-
-    def loadSheetInfo(self):
+    def load_page_info(self):
         """
-        Helper function to get latest info on sheets before updating.
+        Loads info for all pages and page names.
         """
-
-        self.sheet_info = {
+        self.page_info = {
             s['properties']['title']:{
                 k:v for k,v in s['properties'].items() if k is not 'title'
                 } for s in self.action.execute().get('sheets')
             }
 
-        return self.sheet_info
+        self.page_names = list(self.page_info.keys())
 
-
-    def renameSheet(self, sheet_name, new_name):
+    def check_page_name(self, page_names: Union[list, str], create: bool=False):
         """
-        Renames 'sheet_name' in the sheet 'self.sheet_id' as 'new_name.
+        Checks if a page name exists. If it doesn't either create new page (create=True) or raise an error.
         """
-        self.loadSheetInfo()
+        self.load_page_info()
+        if isinstance(page_names, str):
+            page_names = [page_names]
+        for n in page_names:
+            if n not in self.page_names:
+                if create:
+                    self.create_new_page(n)
+                else:
+                    raise ValueError(f"page {n} does not exist")
+        return
 
-        if sheet_name not in self.sheet_info.keys():
-            print('sheet name not found')
-            return
 
+    def rename_page(self, current_name, new_name):
+        """
+        Renames 'current_name' in the sheet 'self.sheet_id' as 'new_name.
+        """
+        self.check_page_name(current_name, new_name)
+            
         request_body = {
             'requests': [
                     {
                     'updateSheetProperties': 
                         {'properties': {
                             'title': new_name,
-                            'sheetId': self.sheet_info[sheet_name]['sheetId']
+                            'sheetId': self.page_info[current_name]['sheetId']
                             },
                             'fields': 'title'
                         }
@@ -158,7 +176,7 @@ class gSheet:
                 spreadsheetId=self.sheet_id,
                 body=request_body
                 ).execute()
-
+            self.load_page_info()
             return response
 
         # escape code for duplicate name error
@@ -166,21 +184,17 @@ class gSheet:
             print(httpErrorParser(e))
             return None
 
-    def deleteSheet(self, sheet_name):
+    def delete_page(self, page_name):
         """
-        Deletes 'sheet_name' from 'self.sheet_id'.
+        Deletes 'page_name' from 'self.sheet_id'.
         """
-        self.loadSheetInfo()
-
-        if sheet_name not in self.sheet_info.keys():
-            print('sheet name not found')
-            return
+        self.check_page_name(page_name)
 
         request_body = {
             'requests': [
                     {
                     'deleteSheet': 
-                        {'sheetId': self.sheet_info[sheet_name]['sheetId']}
+                        {'sheetId': self.page_info[page_name]['sheetId']}
                     }
                 ]
             }
@@ -190,7 +204,7 @@ class gSheet:
                 spreadsheetId=self.sheet_id,
                 body=request_body
                 ).execute()
-
+            self.load_page_info()
             return response
 
         # escape code for duplicate name error
@@ -198,12 +212,22 @@ class gSheet:
             print(httpErrorParser(e))
             return None
 
-    def writeDataToSheet(self, new_data, data_range, write_setting='update'):
+    def format_df(self, df):
+        """
+        Formats dataframe for upload to google sheets. Fills missing entries and converts times to strings.
+        """
+        df = df.fillna('')
+        for c in df.select_dtypes(include=['datetime']).columns:
+            df[c] = df[c].astype(str)
+
+        return df
+
+    def write_to_page(self, new_data: pd.DataFrame, data_range, write_setting='update'):
 
         value_input_option = 'RAW'
         insert_data_option = 'INSERT_ROWS'
 
-        new_data = new_data.fillna('')
+        new_data = self.format_df(new_data)
         data_out_for_upload = [new_data.columns.tolist()] + new_data.values.tolist()
 
         value_range_body = {
@@ -212,10 +236,11 @@ class gSheet:
             }
 
         # if the sheet name doesn't exist, make it
-        sheet_name = data_range.split('!')[0]
-        self.loadSheetInfo()
-        if sheet_name not in self.sheet_info.keys():
-            self.createNewSheet(sheet_name)
+        page_name = data_range.split('!')[0]
+        self.check_page_name(page_name, create=True)
+
+        if write_setting not in ['update', 'append']:
+            raise ValueError("bad write setting")
 
         if write_setting == 'update':
             request = self.sheet_object.values().update(
@@ -224,24 +249,20 @@ class gSheet:
                 body=value_range_body
                 )
 
-        elif write_setting == 'append':
+        if write_setting == 'append':
             request = self.sheet_object.values().append(
                 spreadsheetId=self.sheet_id, 
                 range=data_range, valueInputOption=value_input_option,
                 body=value_range_body
                 )
 
-        else:
-            print('bad write setting')
-            return
-
         response = request.execute()
 
         return response
 
-    def formatSheet(self, sheet_name='Sheet1', request_body=format_request):
-        self.loadSheetInfo()
-        id_ = self.sheet_info[sheet_name]['sheetId']
+    def format_sheet(self, page_name='Sheet1', request_body=format_request):
+        self.load_page_info()
+        id_ = self.page_info[page_name]['sheetId']
 
         request_body[0]['repeatCell']['range']['sheetId'] = id_
         request_body[1]['repeatCell']['range']['sheetId'] = id_
@@ -249,7 +270,7 @@ class gSheet:
 
         self.sheet_object.batchUpdate(spreadsheetId=self.sheet_id, body=request_body).execute()
 
-def quickSheet(data, spreadsheet_name, page_names='Sheet1'):
+def quick_sheet(data, spreadsheet_name, page_names='Sheet1'):
     """
     Creates a new spreadsheet called "spreadsheet_name" and writes "data" to it.
 
@@ -290,17 +311,15 @@ def quickSheet(data, spreadsheet_name, page_names='Sheet1'):
     g = gSheet(spreadsheet_name)
 
     for d in data_dict:
-        g.createNewSheet(d)
-        g.writeDataToSheet(data_dict[d].fillna(''), '{}!A:Z'.format(d))
+        g.create_new_page(d)
+        g.write_data(data_dict[d].fillna(''), '{}!A:Z'.format(d))
 
     return g.sheet_id
     
-
 def quickLoad(sheet_id, data_range="Sheet1!A:Z"):
     g = gSheet(sheet_id)
-    df = g.loadDataFromSheet(data_range)
+    df = g.load_data_from_sheet(data_range)
     return df
-
 
 def quickWrite(data, sheet_id, data_range="Sheet1!A:Z"):
     g = gSheet(sheet_id)
@@ -308,7 +327,7 @@ def quickWrite(data, sheet_id, data_range="Sheet1!A:Z"):
     
     sheet_name = data_range.split('!')[0]
     if sheet_name not in g.sheet_info.keys():
-        g.createNewSheet(sheet_name)
+        g.create_new_page(sheet_name)
 
-    df = g.writeDataToSheet(data.fillna(''), data_range)
+    df = g.write_data(data.fillna(''), data_range)
     return

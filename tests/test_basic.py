@@ -2,14 +2,25 @@ from gsheetstools import *
 import pandas as pd
 
 def test_load():
-    g_service = gSheet(sheet_id="1WDqZsdZuFp-CzIjQqTaWCqyEWSHEz0YrfhkOzoBQlM0", 
-        suffix="cd_service")
-    
-    g_user = gSheet(sheet_id="1b_mclyAuvfj2lk1hpOruSUJNS2ozIru3t4aefqyVfJs",
+    g= gSheet(sheet_id="1NUyOxbJF4cEUGfT0SEUzDk4Tcg11qCCI9IgU9LDFDD8",
         suffix="af412")
 
-    df_service = g_service.loadDataFromSheet('macro_tags')
-    df_user = g_user.loadDataFromSheet("Sheet1")
+    # df = g.load_from_range("Sheet1")
+    assert g.load_from_range("Sheet1").shape == (6, 2)
+    assert g.page_names == ['Sheet1', 'Sheet2', 'Sheet3']
 
-    assert df_service.shape == (253, 6)
-    assert df_user.shape == (2, 3)
+    g.create_new_page("hey")
+    assert g.page_names == ['Sheet1', 'Sheet2', 'Sheet3', 'hey']
+
+    g.delete_page("hey")
+    assert g.page_names == ['Sheet1', 'Sheet2', 'Sheet3']
+
+    df = pd.DataFrame(
+        [
+            {"x": 100, "y": 200},
+            {"x": 300, "y": 400}
+        ]
+    )
+
+    g.write_to_page(df, "hey")
+    assert g.load_from_range("hey").shape == (2, 2)
